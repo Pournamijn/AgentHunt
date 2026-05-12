@@ -94,3 +94,5 @@ Nothing leaves your machine except the Groq API call (if you have a key set) and
 
 ---
 
+## License
+MIT
