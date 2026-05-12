@@ -1,0 +1,40 @@
+{
+  "name": "AgentHunt",
+  "version": "2.0.0",
+  "description": "AgentHunt — AI Email Threat Detection for Gmail & Outlook + malicious link scanner",
+  "manifest_version": 3,
+  "permissions": ["activeTab", "scripting", "storage", "contextMenus"],
+
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://outlook.live.com/*",
+    "https://outlook.office.com/*",
+    "http://127.0.0.1:5000/*",
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.live.com/*",
+        "https://outlook.office.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["link_scanner.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

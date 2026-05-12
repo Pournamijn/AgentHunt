@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentHunt</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 380px;
+      background: #080c14;
+      color: #c8d8f0;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0a0f1e, #111d30);
+      border-bottom: 2px solid #f5c400;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo { font-size: 1.6rem; }
+    .header-title {
+      font-family: 'Share Tech Mono', monospace;
+      color: #f5c400;
+      font-size: 1.05rem;
+      letter-spacing: 4px;
+    }
+    .header-sub {
+      font-size: .7rem;
+      color: #7a9fc4;
+      letter-spacing: 2px;
+      margin-top: 1px;
+    }
+    .status-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: #66bb6a;
+      box-shadow: 0 0 8px #66bb6a;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .status-dot.offline { background: #ef5350; box-shadow: 0 0 8px #ef5350; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #1e3a5f;
+      background: #0a0f1e;
+    }
+    .tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: .72rem;
+      letter-spacing: 1px;
+      color: #7a9fc4;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    .tab.active {
+      color: #f5c400;
+      border-bottom: 2px solid #f5c400;
+      background: rgba(245,196,0,.05);
+    }
+    .tab:hover:not(.active) { color: #c8d8f0; background: rgba(255,255,255,.03); }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Result panel */
+    #result-panel { padding: 16px; }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .score-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .score-label {
+      font-size: .65rem;
+      color: #7a9fc4;
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+    .verdict-box {
+      flex: 1;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .verdict-phishing {
+      background: linear-gradient(135deg, rgba(220,0,0,.25), rgba(245,196,0,.15));
+      border: 2px solid #f5c400;
+      color: #f5c400;
+      text-shadow: 0 0 10px rgba(245,196,0,.6);
+      box-shadow: 0 0 20px rgba(245,196,0,.2), inset 0 0 20px rgba(220,0,0,.1);
+      animation: alertPulse 1.5s ease-in-out infinite;
+    }
+    .verdict-suspicious {
+      background: rgba(255,167,38,.12);
+      border: 1px solid #ffa726;
+      color: #ffa726;
+    }
+    .verdict-legitimate {
+      background: rgba(102,187,106,.12);
+      border: 1px solid #66bb6a;
+      color: #a5d6a7;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(245,196,0,.2), inset 0 0 20px rgba(220,0,0,.1); }
+      50%       { box-shadow: 0 0 35px rgba(245,196,0,.45), inset 0 0 30px rgba(220,0,0,.2); }
+    }
+
+    .card {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .card-label {
+      font-size: .65rem;
+      color: #7a9fc4;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+    .card-text { font-size: .82rem; color: #c8d8f0; line-height: 1.5; }
+
+    .flag-chip {
+      display: inline-block;
+      background: rgba(245,196,0,.1);
+      border: 1px solid rgba(245,196,0,.5);
+      color: #f5c400;
+      font-size: .72rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin: 2px;
+    }
+    .safe-chip { color: #66bb6a; font-size: .82rem; }
+
+    .action-box {
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: .9rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .action-block  {
+      background: linear-gradient(135deg, rgba(220,0,0,.2), rgba(245,196,0,.1));
+      border: 2px solid #f5c400;
+      color: #f5c400;
+      text-shadow: 0 0 8px rgba(245,196,0,.4);
+    }
+    .action-report { background:rgba(255,167,38,.1);  border:1px solid #ffa726; color:#ffcc80; }
+    .action-ignore { background:rgba(102,187,106,.1); border:1px solid #66bb6a; color:#a5d6a7; }
+
+    .score-phishing  { color: #f5c400; text-shadow: 0 0 15px rgba(245,196,0,.7); }
+    .score-suspicious{ color: #ffa726; }
+    .score-safe      { color: #66bb6a; }
+
+    #empty-state { padding: 28px 18px; text-align: center; }
+    .empty-icon  { font-size: 2.5rem; }
+    .empty-title {
+      font-family: 'Share Tech Mono', monospace;
+      color: #f5c400;
+      font-size: .9rem;
+      letter-spacing: 3px;
+      margin-top: 10px;
+    }
+    .empty-sub { color: #7a9fc4; font-size: .8rem; margin-top: 6px; line-height: 1.5; }
+
+    #server-status {
+      padding: 5px 18px 8px;
+      font-size: .73rem;
+      color: #7a9fc4;
+      background: #0a0f1e;
+      border-bottom: 1px solid #111d30;
+    }
+
+    .footer {
+      border-top: 1px solid #111d30;
+      padding: 7px 18px;
+      font-size: .68rem;
+      color: #f5c400;
+      letter-spacing: 2px;
+      text-align: center;
+      opacity: .5;
+    }
+
+    .sender-text {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .78rem;
+      color: #a0b4c8;
+      word-break: break-all;
+    }
+
+    .ti-row  { font-size: .8rem; color: #c8d8f0; margin: 3px 0; }
+    .ti-ok   { color: #66bb6a; }
+    .ti-warn { color: #ffcc80; }
+    .ti-bad  { color: #f5c400; }
+
+    #history-panel { padding: 12px 14px; max-height: 420px; overflow-y: auto; }
+    #history-panel::-webkit-scrollbar { width: 4px; }
+    #history-panel::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
+
+    .hist-empty {
+      text-align: center;
+      color: #334e6e;
+      font-size: .82rem;
+      padding: 30px 0;
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: 2px;
+    }
+
+    .hist-item {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color .2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hist-item:hover { border-color: #f5c400; }
+    .hist-score {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+    }
+    .hist-info { flex: 1; min-width: 0; }
+    .hist-subject {
+      font-size: .82rem;
+      color: #c8d8f0;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hist-sender {
+      font-size: .72rem;
+      color: #7a9fc4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hist-time { font-size: .68rem; color: #334e6e; margin-top: 2px; }
+    .hist-verdict {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .hv-phishing   { background:rgba(245,196,0,.15); border:1px solid #f5c400; color:#f5c400; }
+    .hv-suspicious { background:rgba(255,167,38,.12); border:1px solid #ffa726; color:#ffa726; }
+    .hv-legitimate { background:rgba(102,187,106,.12);border:1px solid #66bb6a; color:#a5d6a7; }
+
+    .hist-clear {
+      width: 100%;
+      background: none;
+      border: 1px solid #1e3a5f;
+      color: #ef5350;
+      border-radius: 6px;
+      padding: 7px;
+      font-size: .75rem;
+      cursor: pointer;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      font-family: 'Rajdhani', sans-serif;
+    }
+    .hist-clear:hover { border-color: #ef5350; background: rgba(239,83,80,.08); }
+
+    #stats-panel { padding: 14px; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .stat-card {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: .65rem;
+      color: #7a9fc4;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .bar-section { margin-bottom: 12px; }
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: .75rem;
+      color: #7a9fc4;
+      margin-bottom: 4px;
+    }
+    .bar-track {
+      background: #0d1b2a;
+      border-radius: 4px;
+      height: 8px;
+      overflow: hidden;
+      border: 1px solid #1e3a5f;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .6s ease;
+    }
+
+    .ml-panel { padding: 0 16px 14px; }
+    .ml-header {
+      font-size: .65rem; color: #7a9fc4; letter-spacing: 2px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+    }
+    .ml-badge {
+      background: linear-gradient(135deg,#1e3a5f,#0d1b2a);
+      border: 1px solid #4fc3f7; color: #4fc3f7;
+      font-size: .6rem; padding: 1px 7px; border-radius: 20px;
+      letter-spacing: 1px; font-weight: 700;
+    }
+    .ml-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .ml-stat {
+      background: #0d1b2a; border: 1px solid #1e3a5f; border-radius: 6px;
+      padding: 8px 10px; text-align: center;
+    }
+    .ml-stat-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.4rem; font-weight: 700; line-height: 1;
+    }
+    .ml-stat-label { font-size: .6rem; color: #7a9fc4; letter-spacing: 1px; margin-top: 3px; }
+    .nlp-bars { margin-bottom: 8px; }
+    .nlp-bar-row { margin-bottom: 5px; }
+    .nlp-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: .7rem; color: #7a9fc4; margin-bottom: 2px;
+    }
+    .nlp-track {
+      background: #0d1b2a; border-radius: 3px; height: 6px;
+      overflow: hidden; border: 1px solid #1e3a5f;
+    }
+    .nlp-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+    .signal-list { margin-top: 6px; }
+    .signal-chip {
+      display: block; background: rgba(79,195,247,.08);
+      border: 1px solid rgba(79,195,247,.3); color: #81d4fa;
+      font-size: .7rem; padding: 3px 8px; border-radius: 4px;
+      margin-bottom: 3px; line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"></div>
+  <div>
+    <div class="header-title">AgentHunt</div>
+    <div class="header-sub">AI THREAT DETECTION</div>
+  </div>
+  <div class="status-dot" id="status-dot"></div>
+</div>
+
+<div id="server-status">Checking server...</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="scan"> SCAN</div>
+  <div class="tab" data-tab="history"> HISTORY</div>
+  <div class="tab" data-tab="stats"> STATS</div>
+</div>
+
+<!-- SCAN TAB -->
+<div class="tab-panel active" id="tab-scan">
+  <div id="empty-state">
+    <div class="empty-icon">📭</div>
+    <div class="empty-title">NO SCAN YET</div>
+    <div class="empty-sub">
+      Open an email in Gmail or Outlook<br>
+      and click the <strong style="color:#f5c400"> AgentHunt</strong> button
+    </div>
+  </div>
+  <div id="result-panel" style="display:none"></div>
+</div>
+
+<!-- HISTORY TAB -->
+<div class="tab-panel" id="tab-history">
+  <div id="history-panel">
+    <div class="hist-empty" id="hist-empty">NO SCAN HISTORY YET</div>
+    <div id="hist-list"></div>
+    <button class="hist-clear" id="hist-clear" style="display:none">🗑 Clear History</button>
+  </div>
+</div>
+
+<!-- STATS TAB -->
+<div class="tab-panel" id="tab-stats">
+  <div id="stats-panel">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-num" id="st-total" style="color:#4fc3f7">0</div>
+        <div class="stat-label">TOTAL SCANNED</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="st-phishing" style="color:#f5c400">0</div>
+        <div class="stat-label">THREAT</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="st-suspicious" style="color:#ffa726">0</div>
+        <div class="stat-label">SUSPICIOUS</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="st-safe" style="color:#66bb6a">0</div>
+        <div class="stat-label">SAFE</div>
+      </div>
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-label"><span> Threat rate</span><span id="pct-phishing">0%</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bar-phishing" style="width:0%;background:#f5c400"></div></div>
+    </div>
+    <div class="bar-section">
+      <div class="bar-label"><span> Suspicious rate</span><span id="pct-suspicious">0%</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bar-suspicious" style="width:0%;background:#ffa726"></div></div>
+    </div>
+    <div class="bar-section">
+      <div class="bar-label"><span> Safe rate</span><span id="pct-safe">0%</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bar-safe" style="width:0%;background:#66bb6a"></div></div>
+    </div>
+
+    <div class="card" style="margin-top:4px">
+      <div class="card-label">AVG RISK SCORE</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:1.6rem;font-weight:700;color:#4fc3f7" id="st-avg">—</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ML / NLP PANEL (injected below scan result) -->
+<div id="ml-nlp-panel" class="ml-panel" style="display:none">
+  <div class="ml-header">
+    <span>ML + NLP ANALYSIS</span>
+    <span class="ml-badge">AI ENGINE</span>
+  </div>
+  <div class="ml-grid">
+    <div class="ml-stat">
+      <div class="ml-stat-num" id="ml-score-val" style="color:#4fc3f7">—</div>
+      <div class="ml-stat-label">ML SCORE</div>
+    </div>
+    <div class="ml-stat">
+      <div class="ml-stat-num" id="nlp-score-val" style="color:#ce93d8">—</div>
+      <div class="ml-stat-label">NLP SCORE</div>
+    </div>
+  </div>
+  <div class="nlp-bars">
+    <div class="nlp-bar-row">
+      <div class="nlp-bar-label"><span>Urgency</span><span id="nlp-urgency-pct">0%</span></div>
+      <div class="nlp-track"><div class="nlp-fill" id="nlp-urgency-bar" style="width:0%;background:#f5c400"></div></div>
+    </div>
+    <div class="nlp-bar-row">
+      <div class="nlp-bar-label"><span>Deception</span><span id="nlp-deception-pct">0%</span></div>
+      <div class="nlp-track"><div class="nlp-fill" id="nlp-deception-bar" style="width:0%;background:#ef5350"></div></div>
+    </div>
+    <div class="nlp-bar-row">
+      <div class="nlp-bar-label"><span>Impersonation</span><span id="nlp-impersonation-pct">0%</span></div>
+      <div class="nlp-track"><div class="nlp-fill" id="nlp-impersonation-bar" style="width:0%;background:#ffa726"></div></div>
+    </div>
+  </div>
+  <div class="signal-list" id="nlp-signal-list"></div>
+</div>
+
+<div class="footer">AgentHunt v2.0 · AI THREAT DETECTION</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
